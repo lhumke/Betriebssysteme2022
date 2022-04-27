@@ -13,7 +13,7 @@ void clearBuffer(char *buf)
 int lseektest(void)
 {
 
-  char prepared_buf[10] = "0123456789";
+  char prepared_buf[10] = "ABCDEFGHI\n";
 
   int failed = 0;
 

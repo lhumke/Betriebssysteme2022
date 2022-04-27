@@ -38,3 +38,5 @@ entry("sleep");
 entry("uptime");
 
 entry("lseek");
+entry("sysinfo");
+entry("trace");
