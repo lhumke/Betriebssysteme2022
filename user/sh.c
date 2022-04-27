@@ -88,6 +88,7 @@ void runcmd(struct cmd *cmd)
       exit(1);
 
     int fd = open(ecmd->argv[0], O_RDONLY);
+    //TODO: check if the fd is not a directory
     if (fd != -1)
     {
       close(fd);
