@@ -154,7 +154,7 @@ freeproc(struct proc *p)
     kfree((void*)p->trapframe);
   p->trapframe = 0;
   if(p->pagetable)
-    proc_freepagetable(p->pagetable, p->sz);
+    proc_freepagetable(p->pagetable, p->sz,p->stacksize);
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -184,7 +184,7 @@ proc_pagetable(struct proc *p)
   // to/from user space, so not PTE_U.
   if(mappages(pagetable, TRAMPOLINE, PGSIZE,
               (uint64)trampoline, PTE_R | PTE_X) < 0){
-    uvmfree(pagetable, 0);
+    uvmfree(pagetable, 0,0);
     return 0;
   }
 
@@ -192,7 +192,7 @@ proc_pagetable(struct proc *p)
   if(mappages(pagetable, TRAPFRAME, PGSIZE,
               (uint64)(p->trapframe), PTE_R | PTE_W) < 0){
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-    uvmfree(pagetable, 0);
+    uvmfree(pagetable, 0,0);
     return 0;
   }
 
@@ -202,11 +202,11 @@ proc_pagetable(struct proc *p)
 // Free a process's page table, and free the
 // physical memory it refers to.
 void
-proc_freepagetable(pagetable_t pagetable, uint64 sz)
+proc_freepagetable(pagetable_t pagetable, uint64 sz, uint64 stacksize)
 {
   uvmunmap(pagetable, TRAMPOLINE, 1, 0);
   uvmunmap(pagetable, TRAPFRAME, 1, 0);
-  uvmfree(pagetable, sz);
+  uvmfree(pagetable, sz, stacksize);
 }
 
 // a user program that calls exec("/init")
@@ -282,13 +282,18 @@ fork(void)
   }
 
   // Copy user memory from parent to child.
-  if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+  if(uvmcopy(p->pagetable, np->pagetable,0, p->sz) < 0){
     freeproc(np);
     release(&np->lock);
     return -1;
   }
+  if(uvmcopy(p->pagetable, np->pagetable,(USTACKTOP - p->stacksize), USTACKTOP) < 0){
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
+  np->stacksize = p->stacksize;
   np->sz = p->sz;
-
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
