@@ -1,6 +1,5 @@
 struct stat;
 struct rtcdate;
-struct sysinfo;
 
 // system calls
 int fork(void);
@@ -25,18 +24,12 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
-int lseek(int fd, int offset, int whence);
-int sysinfo(struct sysinfo*);
-int trace(int);
-
-
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
 void *memmove(void*, const void*, int);
 char* strchr(const char*, char c);
 int strcmp(const char*, const char*);
-int strsub(char str[], char sub[]);
 void fprintf(int, const char*, ...);
 void printf(const char*, ...);
 char* gets(char*, int max);
