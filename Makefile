@@ -124,7 +124,6 @@ UPROGS=\
 	$U/_kill\
 	$U/_ln\
 	$U/_ls\
-	$U/_find\
 	$U/_mkdir\
 	$U/_rm\
 	$U/_sh\
@@ -133,12 +132,11 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
-	$U/_lseektest\
-	$U/_sysinfotest\
-	$U/_trace\
+	$U/_bttest\
+	$U/_lazytests\
 
-fs.img: mkfs/mkfs README TESTFILE $(UPROGS)
-	mkfs/mkfs fs.img README TESTFILE $(UPROGS)
+fs.img: mkfs/mkfs README $(UPROGS)
+	mkfs/mkfs fs.img README $(UPROGS)
 
 -include kernel/*.d user/*.d
 
