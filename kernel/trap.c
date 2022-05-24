@@ -77,13 +77,11 @@ usertrap(void)
       char *mem;
       mem = kalloc();
       if(mem == 0){
-        uvmdealloc(p->pagetable, r_stval(), r_stval());
         p->killed = 1;
       }else{
         memset(mem, 0, PGSIZE);
         if(mappages(p->pagetable, PGROUNDDOWN(r_stval()), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
           kfree(mem);
-          uvmdealloc(p->pagetable, r_stval(), r_stval());
           p->killed = 1;
         }
       }
