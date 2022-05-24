@@ -140,7 +140,7 @@ void backtrace(void){
   uint64 stack_bottom = PGROUNDDOWN(framepointer);
 
   uint64* return_adress = ((uint64*)(framepointer-8));
-  
+  printf("backtrace: \n");
   while(framepointer > stack_bottom && framepointer < stack_top)
   {
     printf("%p\n", *return_adress);
