@@ -1,6 +1,7 @@
 #define T_DIR     1   // Directory
 #define T_FILE    2   // File
 #define T_DEVICE  3   // Device
+#define T_SYMLINK 4   // Symlink
 
 struct stat {
   int dev;     // File system's disk device
@@ -8,6 +9,7 @@ struct stat {
   short type;  // Type of file
   short nlink; // Number of links to file
   uint64 size; // Size of file in bytes
+  short mode;  
   short uid; // User ID of owner
   short gid; // Group ID of owner
 };

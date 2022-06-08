@@ -243,6 +243,8 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
+  p->uid = 0;
+  p->gid = 0;
 
   release(&p->lock);
 }
@@ -304,6 +306,8 @@ fork(void)
   safestrcpy(np->name, p->name, sizeof(p->name));
 
   pid = np->pid;
+  np->uid = p->uid;
+  np->gid = p->gid;
 
   release(&np->lock);
 

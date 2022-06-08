@@ -231,6 +231,9 @@ iupdate(struct inode *ip)
   dip->minor = ip->minor;
   dip->nlink = ip->nlink;
   dip->size = ip->size;
+  dip->uid = ip->uid;
+  dip->gid = ip->gid;
+  dip->mode = ip->mode;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
   log_write(bp);
   brelse(bp);
@@ -304,6 +307,9 @@ ilock(struct inode *ip)
     ip->minor = dip->minor;
     ip->nlink = dip->nlink;
     ip->size = dip->size;
+    ip->uid = dip->uid;
+    ip->gid = dip->gid;
+    ip->mode = dip->mode;
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
     brelse(bp);
     ip->valid = 1;
@@ -446,6 +452,10 @@ stati(struct inode *ip, struct stat *st)
   st->type = ip->type;
   st->nlink = ip->nlink;
   st->size = ip->size;
+  st->uid = ip->uid;
+  st->gid = ip->gid;
+  st->mode = ip->mode;
+
 }
 
 // Read data from inode.
@@ -671,4 +681,22 @@ struct inode*
 nameiparent(char *path, char *name)
 {
   return namex(path, 1, name);
+}
+
+int permission(struct inode *ip, int mask){
+  struct proc *p = myproc();
+
+
+  if(ip == 0){
+    return -1;
+  } 
+
+  if(p->uid == 0) return 0;
+  
+  if(p->uid == ip->uid || p->gid == ip->gid){
+    if((ip->mode & (mask<<6)) == (mask<<6) || (ip->mode & (mask<<3)) == (mask<<3)){
+      return 0;
+    }
+  }else if((ip->mode & mask) == mask) return 0;
+  return -1;
 }

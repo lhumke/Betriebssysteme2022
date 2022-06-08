@@ -265,6 +265,9 @@ create(char *path, short type, short major, short minor)
   ip->major = major;
   ip->minor = minor;
   ip->nlink = 1;
+  ip->mode = 0b110110100;
+  ip->uid = myproc()->uid;
+  ip->gid = myproc()->gid;
   iupdate(ip);
 
   if(type == T_DIR){  // Create . and .. entries.
@@ -291,6 +294,7 @@ sys_open(void)
   struct file *f;
   struct inode *ip;
   int n;
+  int loopcheck=0;
 
   if((n = argstr(0, path, MAXPATH)) < 0 || argint(1, &omode) < 0)
     return -1;
@@ -298,6 +302,18 @@ sys_open(void)
   begin_op();
 
   if(omode & O_CREATE){
+    struct inode* parentip;
+    char parentname[DIRSIZ];
+    parentip=nameiparent(path,parentname);
+    /* if(parentip == 0){
+      end_op();
+      return -1;
+    } */
+    if(permission(parentip, 0b010) < 0){
+      printf("permission denied\n");
+      end_op();
+      return -1;
+    }
     ip = create(path, T_FILE, 0, 0);
     if(ip == 0){
       end_op();
@@ -308,7 +324,45 @@ sys_open(void)
       end_op();
       return -1;
     }
+    if(omode != O_RDWR && permission(ip, 0b110) < 0){
+      end_op();
+      return -1;
+    }
+    if(omode != O_RDONLY && permission(ip, 0b100) < 0){
+      end_op();
+      return -1;
+    }
+    if(omode != O_WRONLY && permission(ip, 0b010) < 0){
+      end_op();
+      return -1;
+    }
+    
     ilock(ip);
+
+    while (ip->type==T_SYMLINK&&!(omode&O_NOFOLLOW)&&loopcheck!=10)
+    {
+      if(readi(ip,0,(uint64)path,0,ip->size)!=ip->size){
+          iunlockput(ip);
+          end_op();
+          return -1;
+      }
+      iunlockput(ip);
+      ip=namei(path);
+      if(ip == 0){
+        end_op();
+        return -1;
+      }
+      loopcheck+=1;
+      ilock(ip);
+    }
+
+    if(loopcheck == 10){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+
+
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
@@ -484,3 +538,103 @@ sys_pipe(void)
   }
   return 0;
 }
+
+uint64 sys_symlink(void){
+  char target[MAXPATH];
+  char path[MAXPATH];
+  struct inode *link;
+
+  if(argstr(0, path, MAXPATH) < 0 || argstr(1, target, MAXPATH) < 0){
+    return -1;
+  }
+
+  begin_op();
+  link = create(target,T_SYMLINK,0,0);
+  if(link == 0){
+    end_op();
+    //Hier soll laut Aufgabenstellung kein Fehler zurueckgegeben werden
+    return 0;
+  }
+
+  if(writei(link,0,(uint64)path,0,MAXPATH)!=MAXPATH){
+    iunlockput(link);
+    end_op();
+    return -1;
+  }
+  iunlockput(link);
+  end_op();
+  return 0;
+}
+
+uint64 sys_chown(void){
+  char path[MAXPATH];
+  int uid, gid;
+  struct inode *ip;
+  struct proc *p = myproc();
+
+  if(argstr(0, path, MAXPATH) < 0 || argint(1, &uid) < 0 || argint(2, &gid) < 0){
+    return -1;
+  }
+
+  begin_op();
+  if((ip = namei(path)) == 0){
+    end_op();
+    return -1;
+  }
+
+  ilock(ip);
+
+  if(p->uid == 0){
+    ip->uid = uid;
+    ip->gid = gid;
+  }else if(ip->uid == p->uid){
+    ip->gid = gid;
+  }else{
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+  iupdate(ip);
+  iunlockput(ip);
+  end_op();
+  return 0;
+}
+
+uint64 sys_chmod(void){
+  char path[MAXPATH];
+  int mode;
+  struct inode *ip;
+  struct proc *p = myproc();
+
+  if(argstr(0, path, MAXPATH) < 0 ||argint(1, &mode) < 0){
+    return -1;
+  }
+
+  begin_op();
+  if((ip = namei(path)) == 0){
+    end_op();
+    return -1;
+  }
+
+  ilock(ip);
+
+  if(p->uid == 0 || ip->uid == p->uid){
+    ip->mode = mode;
+    iupdate(ip);
+  }else{
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+
+  iunlockput(ip);
+  end_op();
+  return 0;
+
+}
+
+
+
+  
+
+

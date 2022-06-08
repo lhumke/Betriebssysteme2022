@@ -55,7 +55,7 @@ stat_slink(char *pn, struct stat *st)
 static void
 testsymlink(void)
 {
-  int r, fd1 = -1, fd2 = -1;
+  int r, fd1 = -1, fd2 = -1,k;
   char buf[4] = {'a', 'b', 'c', 'd'};
   char c = 0, c2 = 0;
   struct stat st;
@@ -70,6 +70,10 @@ testsymlink(void)
   r = symlink("/testsymlink/a", "/testsymlink/b");
   if(r < 0)
     fail("symlink b -> a failed");
+    
+  k = symlink("/testsymlink/g", "/testsymlink/b");
+  if(k < 0)
+    fail("symlink b -> g failed");
 
   if(write(fd1, buf, sizeof(buf)) != 4)
     fail("failed to write to a");

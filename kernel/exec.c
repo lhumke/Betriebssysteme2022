@@ -27,7 +27,13 @@ exec(char *path, char **argv)
     end_op();
     return -1;
   }
+
   ilock(ip);
+
+  if(permission(ip, 0b001) < 0){
+    goto bad;
+  }
+
 
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))

@@ -23,6 +23,13 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int symlink(char*, char*);
+int chmod(char*, short);
+int chown(char*, short, short);
+int getuid(void);
+int getgid(void);
+int setuid(short);
+int setgid(short);
 
 // ulib.c
 int stat(const char*, struct stat*);
