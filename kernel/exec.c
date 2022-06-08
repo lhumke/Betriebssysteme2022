@@ -34,7 +34,7 @@ exec(char *path, char **argv)
     goto bad;
   }
 
-
+  printf("exec: %s\n", path);
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;
