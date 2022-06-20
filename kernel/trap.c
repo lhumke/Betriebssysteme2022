@@ -53,7 +53,7 @@ usertrap(void)
   if(r_scause() == 8){
     // system call
 
-    if(p->killed)
+    if(lockfree_read4(&p->killed))
       exit(-1);
 
     // sepc points to the ecall instruction,
@@ -67,34 +67,17 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else if(r_scause() == 13 || r_scause() == 15){
-    //Page fault exception 
-    //start lazy allocation here
-    if((p->sz) < r_stval() || PGROUNDUP(p->trapframe->sp) > r_stval()){
-      printf("usertrap: page fault at %x\n", r_stval());
-      p->killed = 1;
-    }else {
-      char *mem;
-      mem = kalloc();
-      if(mem == 0){
-        p->killed = 1;
-      }else{
-        memset(mem, 0, PGSIZE);
-        if(mappages(p->pagetable, PGROUNDDOWN(r_stval()), PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
-          kfree(mem);
-          p->killed = 1;
-        }
-      }
-      }
-  } 
-  else {
+  } else {
+
+    
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     p->killed = 1;
   }
 
-  if(p->killed)
+  if(lockfree_read4(&p->killed))
     exit(-1);
+  
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
@@ -209,7 +192,11 @@ devintr()
       uartintr();
     } else if(irq == VIRTIO0_IRQ){
       virtio_disk_intr();
-    } else if(irq){
+    }
+    else if(irq == E1000_IRQ){
+      e1000_intr();
+    }
+    else if(irq){
       printf("unexpected interrupt irq=%d\n", irq);
     }
 
