@@ -115,8 +115,7 @@ int e1000_transmit(struct mbuf *m)
   tx_ring[index_package].addr = (uint64)m->head;
   tx_ring[index_package].length = (uint16)m->len;
 
-  // Set the necessary cmd flags (read the E1000 manual)
-  // and stash away a pointer to the new mbuf for later freeing.
+  //Register nach e1000 Manuel
   tx_ring[index_package].cmd |= E1000_TXD_CMD_EOP;
   tx_ring[index_package].cmd |= E1000_TXD_CMD_RS;
 
